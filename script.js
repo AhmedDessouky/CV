@@ -1,80 +1,194 @@
-// Welcome message on page load
-window.addEventListener('load', () => {
-  const welcomeMessage = document.getElementById('welcomeMessage');
-  welcomeMessage.textContent = "Welcome to Ahmed El Dessouky's portfolio page!";
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => document.querySelectorAll(selector);
+
+const githubUsername = 'ahmeddessouky';
+
+const projectsData = [
+  { title: 'Thesis - Smart Planting', type: 'ai', description: 'IoT-based smart agriculture system with AI-powered plant health monitoring and automation support for farmers.' },
+  { title: 'Audio-to-Haptic Directional Alert Band', type: 'hardware', description: 'ESP32 assistive system that detects siren-like sounds and translates their direction into haptic feedback.' },
+  { title: 'Distributed Systems Platform', type: 'software', description: 'Instagram-like social media platform using data distribution concepts from distributed systems.' },
+  { title: 'Digital Forensics Investigation', type: 'software', description: 'Structured forensic analysis project applying data recovery techniques and evidence investigation steps.' },
+  { title: 'Machine Learning Model', type: 'ai', description: 'Data analysis and prediction model with preprocessing, model evaluation, and interpretation of results.' },
+  { title: 'Video Game Database System', type: 'software', description: 'MySQL relational database with a GUI for video game data analytics, searching, filtering, and structured reporting.' },
+  { title: 'RISC-V FPGA Implementation', type: 'hardware', description: 'Pipelined RISC-V processor on Nexys A7 FPGA supporting the RV32I instruction set. It demonstrates digital design, processor architecture, and FPGA implementation knowledge.' },
+  { title: 'Search Engine', type: 'software', description: 'Webpage filtering and ranking system using relevance scoring to organize and return more useful search results.' },
+  { title: 'Shooter Game', type: 'software', description: 'Third-person shooter game built in C++ using Qt Creator for graphics and interactive gameplay logic.' }
+];
+
+const menuBtn = $('#menuBtn');
+const navLinks = $('#navLinks');
+const themeToggle = $('#themeToggle');
+const aboutToggle = $('#aboutToggle');
+const shortAbout = $('#shortAbout');
+const longAbout = $('#longAbout');
+const projectGrid = $('#projectGrid');
+const projectSearch = $('#projectSearch');
+const projectCount = $('#projectCount');
+const filters = $$('.filter');
+const contactForm = $('#contactForm');
+const formMessage = $('#formMessage');
+const repoGrid = $('#repoGrid');
+const repoStatus = $('#repoStatus');
+const progressBar = $('#progressBar');
+const dialog = $('#projectDialog');
+const dialogClose = $('#dialogClose');
+const dialogTitle = $('#dialogTitle');
+const dialogType = $('#dialogType');
+const dialogDescription = $('#dialogDescription');
+let activeFilter = 'all';
+
+$('#year').textContent = new Date().getFullYear();
+
+function applyStoredTheme() {
+  const savedTheme = localStorage.getItem('portfolioTheme');
+  if (savedTheme === 'dark') document.body.classList.add('dark');
+  themeToggle.textContent = document.body.classList.contains('dark') ? 'Light Mode' : 'Dark Mode';
+}
+applyStoredTheme();
+
+menuBtn.addEventListener('click', () => {
+  const isOpen = navLinks.classList.toggle('open');
+  menuBtn.setAttribute('aria-expanded', String(isOpen));
 });
 
-// Dark mode / light mode toggle
-const themeToggle = document.getElementById('themeToggle');
+$$('.nav-links a').forEach((link) => link.addEventListener('click', () => {
+  navLinks.classList.remove('open');
+  menuBtn.setAttribute('aria-expanded', 'false');
+}));
+
 themeToggle.addEventListener('click', () => {
   document.body.classList.toggle('dark');
-  themeToggle.textContent = document.body.classList.contains('dark')
-    ? 'Toggle Light Mode'
-    : 'Toggle Dark Mode';
+  localStorage.setItem('portfolioTheme', document.body.classList.contains('dark') ? 'dark' : 'light');
+  themeToggle.textContent = document.body.classList.contains('dark') ? 'Light Mode' : 'Dark Mode';
 });
 
-// Show / hide sections
-const toggleSkillsBtn = document.getElementById('toggleSkillsBtn');
-const skillsList = document.getElementById('skillsList');
-toggleSkillsBtn.addEventListener('click', () => {
-  skillsList.classList.toggle('hidden');
-  toggleSkillsBtn.textContent = skillsList.classList.contains('hidden')
-    ? 'Show Skills'
-    : 'Hide Skills';
+aboutToggle.addEventListener('click', () => {
+  const showingShort = shortAbout.classList.toggle('hidden') === false;
+  longAbout.classList.toggle('hidden', showingShort);
+  aboutToggle.textContent = showingShort ? 'Show full version' : 'Show shorter version';
 });
 
-const toggleAchievementsBtn = document.getElementById('toggleAchievementsBtn');
-const achievementsList = document.getElementById('achievementsList');
-toggleAchievementsBtn.addEventListener('click', () => {
-  achievementsList.classList.toggle('hidden');
-  toggleAchievementsBtn.textContent = achievementsList.classList.contains('hidden')
-    ? 'Show Achievements'
-    : 'Hide Achievements';
+function renderProjects() {
+  const query = projectSearch.value.toLowerCase().trim();
+  const visibleProjects = projectsData.filter((project) => {
+    const matchesFilter = activeFilter === 'all' || project.type === activeFilter;
+    const searchable = `${project.title} ${project.description} ${project.type}`.toLowerCase();
+    return matchesFilter && searchable.includes(query);
+  });
+
+  projectGrid.innerHTML = '';
+  visibleProjects.forEach((project) => {
+    const card = document.createElement('article');
+    card.className = `project-card ${project.title.includes('Smart Planting') ? 'featured' : ''}`;
+    card.tabIndex = 0;
+    card.innerHTML = `<p class="eyebrow">${project.type}</p><h3>${project.title}</h3><p>${project.description}</p>`;
+    card.addEventListener('click', () => openProject(project));
+    card.addEventListener('keydown', (event) => { if (event.key === 'Enter') openProject(project); });
+    projectGrid.appendChild(card);
+  });
+  projectCount.textContent = `${visibleProjects.length} project${visibleProjects.length === 1 ? '' : 's'} shown`;
+}
+
+function openProject(project) {
+  dialogType.textContent = project.type;
+  dialogTitle.textContent = project.title;
+  dialogDescription.textContent = project.description;
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+}
+
+dialogClose.addEventListener('click', () => dialog.close());
+dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+
+filters.forEach((button) => {
+  button.addEventListener('click', () => {
+    filters.forEach((btn) => btn.classList.remove('active'));
+    button.classList.add('active');
+    activeFilter = button.dataset.filter;
+    renderProjects();
+  });
 });
-
-// Dynamic skills list
-const addSkillBtn = document.getElementById('addSkillBtn');
-const skillInput = document.getElementById('skillInput');
-addSkillBtn.addEventListener('click', () => {
-  const newSkill = skillInput.value.trim();
-
-  if (newSkill === '') {
-    return;
-  }
-
-  const li = document.createElement('li');
-  li.textContent = newSkill;
-  skillsList.appendChild(li);
-  skillsList.classList.remove('hidden');
-  toggleSkillsBtn.textContent = 'Hide Skills';
-  skillInput.value = '';
-});
-
-// Contact form validation
-const contactForm = document.getElementById('contactForm');
-const formMessage = document.getElementById('formMessage');
+projectSearch.addEventListener('input', renderProjects);
+renderProjects();
 
 contactForm.addEventListener('submit', (event) => {
   event.preventDefault();
-
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const message = document.getElementById('message').value.trim();
+  const name = $('#name').value.trim();
+  const email = $('#email').value.trim();
+  const topic = $('#topic').value;
+  const reply = document.querySelector('input[name="reply"]:checked').value;
+  const consent = $('#consent').checked;
+  const message = $('#message').value.trim();
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!name || !email || !message) {
-    formMessage.textContent = 'Please complete all required fields.';
-    formMessage.style.color = '#dc2626';
-    return;
-  }
+  if (name.length < 2) return showFormMessage('Please enter a valid name.', false);
+  if (!emailPattern.test(email)) return showFormMessage('Please enter a valid email address.', false);
+  if (!topic) return showFormMessage('Please choose a topic.', false);
+  if (!consent) return showFormMessage('Please confirm the checkbox before sending.', false);
+  if (message.length < 10) return showFormMessage('Please write a message of at least 10 characters.', false);
 
-  if (!emailPattern.test(email)) {
-    formMessage.textContent = 'Please enter a valid email address.';
-    formMessage.style.color = '#dc2626';
-    return;
-  }
-
-  formMessage.textContent = 'Message sent successfully!';
-  formMessage.style.color = '#16a34a';
+  const subject = encodeURIComponent(`Portfolio Contact - ${topic}`);
+  const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\nPreferred Reply: ${reply}\n\nMessage:\n${message}`);
+  showFormMessage(`Thank you, ${name}. Your email app should open now.`, true);
+  window.location.href = `mailto:adessouky@aucegypt.edu?subject=${subject}&body=${body}`;
   contactForm.reset();
 });
+
+function showFormMessage(message, success) {
+  formMessage.textContent = message;
+  formMessage.style.color = success ? 'var(--blue)' : '#dc2626';
+}
+
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+async function loadLatestWork() {
+  repoGrid.innerHTML = '';
+  repoStatus.textContent = 'Loading latest work...';
+
+  try {
+    const response = await fetch(`https://api.github.com/users/${githubUsername}/repos?sort=updated&direction=desc&per_page=6`);
+    if (!response.ok) throw new Error(`GitHub returned status ${response.status}`);
+    const repos = await response.json();
+
+    const usefulRepos = Array.isArray(repos)
+      ? repos.filter((repo) => !repo.fork).slice(0, 6)
+      : [];
+
+    if (usefulRepos.length === 0) {
+      repoStatus.textContent = 'No public GitHub projects are available right now.';
+      return;
+    }
+
+    repoStatus.textContent = `Showing ${usefulRepos.length} recently updated public project${usefulRepos.length === 1 ? '' : 's'}.`;
+    usefulRepos.forEach((repo) => {
+      const card = document.createElement('article');
+      card.className = 'repo-card';
+      card.innerHTML = `
+        <span class="repo-date">Updated ${formatDate(repo.updated_at)}</span>
+        <a href="${repo.html_url}" target="_blank" rel="noopener">${repo.name}</a>
+        <p>${repo.description || 'Public GitHub project. Description to be updated soon.'}</p>
+        <small class="repo-meta">
+          <span class="repo-language">${repo.language || 'Not specified'}</span> • Stars: ${repo.stargazers_count} • Forks: ${repo.forks_count}
+        </small>
+      `;
+      repoGrid.appendChild(card);
+    });
+  } catch (error) {
+    repoStatus.textContent = 'Latest GitHub work could not be loaded right now. Please use the GitHub button above to view my repositories directly.';
+  }
+}
+
+window.addEventListener('scroll', () => {
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const progress = docHeight > 0 ? (window.scrollY / docHeight) * 100 : 0;
+  progressBar.style.width = `${progress}%`;
+});
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+$$('.reveal').forEach((section) => observer.observe(section));
+
+loadLatestWork();
